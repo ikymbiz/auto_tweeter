@@ -6,20 +6,19 @@
     <title>My Private Tweeter</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 500px; margin: 20px auto; padding: 20px; background: #f5f8fa; }
+        body { font-family: -apple-system, sans-serif; max-width: 500px; margin: 20px auto; padding: 20px; background: #f5f8fa; }
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h2 { font-size: 1.2em; color: #14171a; margin-bottom: 15px; }
         textarea { width: 100%; height: 120px; border: 1px solid #ccd6dd; border-radius: 10px; padding: 12px; box-sizing: border-box; resize: none; margin-bottom: 10px; font-size: 16px; }
-        button { background: #1da1f2; color: white; border: none; padding: 12px; border-radius: 25px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; transition: 0.2s; }
-        button:hover { background: #1a91da; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        #status { margin-top: 15px; font-size: 0.9em; text-align: center; min-height: 1.2em; }
+        button { background: #1da1f2; color: white; border: none; padding: 12px; border-radius: 25px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; }
+        button:disabled { background: #ccc; }
+        #status { margin-top: 15px; font-size: 0.9em; text-align: center; line-height: 1.6; }
         .settings { margin-top: 30px; font-size: 0.8em; color: #657786; border-top: 1px solid #e1e8ed; padding-top: 15px; }
         .input-group { margin-bottom: 12px; }
-        label { display: block; margin-bottom: 4px; font-weight: bold; color: #657786; }
-        input { width: 100%; padding: 10px; border: 1px solid #ccd6dd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        .info { background: #e8f5fd; padding: 10px; border-radius: 8px; margin-top: 15px; line-height: 1.4; }
-        .info a { color: #1da1f2; text-decoration: none; font-weight: bold; }
+        label { display: block; margin-bottom: 4px; font-weight: bold; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccd6dd; border-radius: 6px; box-sizing: border-box; }
+        .info-box { background: #f0f7ff; padding: 12px; border-radius: 8px; margin-top: 15px; border: 1px solid #cfe2ff; }
+        .info-box a { color: #1da1f2; font-weight: bold; text-decoration: none; }
+        .info-box a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -31,13 +30,20 @@
     <p id="status"></p>
 
     <div class="settings">
-        <h3>🔑 API設定（開発者ポータルの値を入力）</h3>
+        <h3>🔑 API設定</h3>
+        
+        <div class="info-box" style="margin-bottom: 20px;">
+            <strong>🗝️ キーの取得・再発行はこちら:</strong><br>
+            <a href="https://developer.x.com/en/portal/dashboard" target="_blank">X Developer Portal (公式)</a>
+            <p style="margin: 5px 0 0; font-size: 0.85em; color: #d93025;">※ console.x.ai (Grok) のキーは使えません！</p>
+        </div>
+
         <div class="input-group">
-            <label>API Key / Consumer Key</label>
+            <label>API Key (Consumer Key)</label>
             <input type="password" id="cKey">
         </div>
         <div class="input-group">
-            <label>API Key Secret / Consumer Secret</label>
+            <label>API Key Secret (Consumer Secret)</label>
             <input type="password" id="cSecret">
         </div>
         <div class="input-group">
@@ -50,37 +56,33 @@
         </div>
         <button onclick="saveKeys()" style="background: #657786; margin-top: 5px;">設定を保存</button>
         
-        <div class="info">
-            <strong>⚠️ スマホ利用時の必須作業：</strong><br>
-            CORSエラー を防ぐため、以下のリンクを開き、青いボタンを1回押してください。<br>
-            <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank">中継サーバーの利用許可はこちら</a>
+        <div class="info-box">
+            <strong>⚠️ スマホ用・送信許可:</strong><br>
+            <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank">ここを1回押して「青いボタン」をタップ</a>
         </div>
     </div>
 </div>
 
 <script>
-    // 1. 保存されたキーの読み込み
+    // 保存・読み込み・署名・送信のロジックは前回と同じ
     window.onload = () => {
         ['cKey', 'cSecret', 'aToken', 'aSecret'].forEach(id => {
             document.getElementById(id).value = localStorage.getItem('x_' + id) || '';
         });
     };
 
-    // 2. キーをローカルに保存
     function saveKeys() {
         ['cKey', 'cSecret', 'aToken', 'aSecret'].forEach(id => {
             localStorage.setItem('x_' + id, document.getElementById(id).value);
         });
-        alert('設定を保存しました。');
+        alert('キーをブラウザに保存しました！');
     }
 
-    // 3. OAuth 1.0a 署名の作成ロジック
     function getAuthHeader(method, url, params) {
         const cKey = localStorage.getItem('x_cKey');
         const cSecret = localStorage.getItem('x_cSecret');
         const tKey = localStorage.getItem('x_aToken');
         const tSecret = localStorage.getItem('x_aSecret');
-
         if(!cKey || !cSecret || !tKey || !tSecret) return null;
 
         const oauthParams = {
@@ -91,25 +93,20 @@
             oauth_token: tKey,
             oauth_version: "1.0"
         };
-
         const allParams = { ...params, ...oauthParams };
         const baseString = method.toUpperCase() + "&" + encodeURIComponent(url) + "&" +
             encodeURIComponent(Object.keys(allParams).sort().map(k => `${encodeURIComponent(k)}=${encodeURIComponent(allParams[k])}`).join("&"));
         const signingKey = encodeURIComponent(cSecret) + "&" + encodeURIComponent(tSecret);
         const signature = CryptoJS.HmacSHA1(baseString, signingKey).toString(CryptoJS.enc.Base64);
-
         oauthParams.oauth_signature = signature;
         return "OAuth " + Object.keys(oauthParams).sort().map(k => `${k}="${encodeURIComponent(oauthParams[k])}"`).join(", ");
     }
 
-    // 4. ツイート送信処理
     async function postTweet() {
         const text = document.getElementById('tweetText').value;
         const btn = document.getElementById('postBtn');
         const status = document.getElementById('status');
-
-        if (!text) return alert('内容を入力してください');
-        
+        if (!text) return alert('入力してね');
         btn.disabled = true;
         status.innerHTML = '⏳ 送信中...';
 
@@ -117,35 +114,22 @@
         const proxyUrl = "https://cors-anywhere.herokuapp.com/"; 
         const authHeader = getAuthHeader("POST", apiUrl, {});
 
-        if (!authHeader) {
-            status.innerHTML = '❌ キー設定が空です';
-            btn.disabled = false;
-            return;
-        }
-
         try {
             const response = await fetch(proxyUrl + apiUrl, {
                 method: "POST",
-                headers: {
-                    "Authorization": authHeader,
-                    "Content-Type": "application/json",
-                    "x-requested-with": "XMLHttpRequest"
-                },
+                headers: { "Authorization": authHeader, "Content-Type": "application/json", "x-requested-with": "XMLHttpRequest" },
                 body: JSON.stringify({ text: text })
             });
-
             const result = await response.json();
-
             if (response.ok) {
-                status.innerHTML = "✅ ツイートに成功しました！";
+                const tweetUrl = `https://x.com/i/status/${result.data.id}`;
+                status.innerHTML = `✅ 成功！<br><a href="${tweetUrl}" target="_blank">ツイートを見る</a>`;
                 document.getElementById('tweetText').value = "";
             } else {
-                status.innerHTML = "❌ エラー: " + (result.detail || "API設定を確認してください");
-                console.error(result);
+                status.innerHTML = "❌ エラー: " + (result.detail || "API設定や権限を確認してください");
             }
         } catch (e) {
             status.innerHTML = "❌ 接続失敗。プロキシの許可設定を確認してください。";
-            console.error(e);
         } finally {
             btn.disabled = false;
         }
