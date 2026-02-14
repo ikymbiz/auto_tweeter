@@ -7,11 +7,14 @@
     <style>
         body { font-family: sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; background: #f5f8fa; }
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        textarea { width: 100%; height: 100px; border: 1px solid #ccd6dd; border-radius: 10px; padding: 10px; box-sizing: border-box; resize: none; }
-        button { background: #1da1f2; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        textarea { width: 100%; height: 100px; border: 1px solid #ccd6dd; border-radius: 10px; padding: 10px; box-sizing: border-box; resize: none; margin-bottom: 10px; }
+        button { background: #1da1f2; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
         button:hover { background: #1a91da; }
-        .settings { margin-top: 30px; font-size: 0.8em; color: #657786; border-top: 1px solid #eee; pt: 10px; }
-        input { width: 100%; margin-bottom: 5px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
+        .settings { margin-top: 30px; font-size: 0.8em; color: #657786; border-top: 1px solid #eee; padding-top: 10px; }
+        .settings h3 { margin-bottom: 10px; }
+        .input-group { margin-bottom: 10px; }
+        label { display: block; margin-bottom: 2px; font-weight: bold; }
+        input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -23,30 +26,47 @@
     <p id="status"></p>
 
     <div class="settings">
-        <h3>🔑 APIキー設定 (ブラウザにのみ保存されます)</h3>
-        <input type="password" id="apiKey" placeholder="API Key">
-        <input type="password" id="apiSecret" placeholder="API Key Secret">
-        <input type="password" id="accessToken" placeholder="Access Token">
-        <input type="password" id="accessTokenSecret" placeholder="Access Token Secret">
-        <button onclick="saveKeys()" style="background: #657786;">キーを保存</button>
+        <h3>🔑 API設定（ブラウザのローカルに保存）</h3>
+        
+        <div class="input-group">
+            <label>API Key / Consumer Key</label>
+            <input type="password" id="consumerKey">
+        </div>
+
+        <div class="input-group">
+            <label>API Key Secret / Consumer Secret</label>
+            <input type="password" id="consumerSecret">
+        </div>
+
+        <div class="input-group">
+            <label>Access Token</label>
+            <input type="password" id="accessToken">
+        </div>
+
+        <div class="input-group">
+            <label>Access Token Secret</label>
+            <input type="password" id="accessTokenSecret">
+        </div>
+
+        <button onclick="saveKeys()" style="background: #657786;">設定を保存</button>
     </div>
 </div>
 
 <script>
-    // ページ読み込み時にLocalStorageからキーを復元
+    // ページ読み込み時に保存された値を復元
     window.onload = () => {
-        document.getElementById('apiKey').value = localStorage.getItem('x_api_key') || '';
-        document.getElementById('apiSecret').value = localStorage.getItem('x_api_secret') || '';
+        document.getElementById('consumerKey').value = localStorage.getItem('x_consumer_key') || '';
+        document.getElementById('consumerSecret').value = localStorage.getItem('x_consumer_secret') || '';
         document.getElementById('accessToken').value = localStorage.getItem('x_access_token') || '';
         document.getElementById('accessTokenSecret').value = localStorage.getItem('x_access_token_secret') || '';
     };
 
     function saveKeys() {
-        localStorage.setItem('x_api_key', document.getElementById('apiKey').value);
-        localStorage.setItem('x_api_secret', document.getElementById('apiSecret').value);
+        localStorage.setItem('x_consumer_key', document.getElementById('consumerKey').value);
+        localStorage.setItem('x_consumer_secret', document.getElementById('consumerSecret').value);
         localStorage.setItem('x_access_token', document.getElementById('accessToken').value);
         localStorage.setItem('x_access_token_secret', document.getElementById('accessTokenSecret').value);
-        alert('キーをブラウザに保存しました。');
+        alert('設定を保存しました。');
     }
 
     async function postTweet() {
@@ -57,33 +77,20 @@
 
         status.innerText = '送信中...';
 
-        // ※ X API v2 へのリクエスト例
-        // ブラウザから直接送る場合、OAuth 1.0aの署名計算が必要です。
-        // ここでは概念的なFetchを示します（実際には署名ライブラリが必要です）
-        
         try {
-            // 注意: 実際にはここにOAuth署名作成ロジックが入ります
-            // 自分専用なら、CORS回避用のプロキシURLを先頭につける必要があります
-            const proxyUrl = "https://your-proxy.com/"; 
+            // 注意: ブラウザから直接送信する場合、CORSプロキシまたは拡張機能が必要です
+            const proxyUrl = ""; // 例: "https://cors-anywhere.herokuapp.com/"
             const apiUrl = "https://api.twitter.com/2/tweets";
 
-            const response = await fetch(proxyUrl + apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    // 'Authorization': `OAuth ...署名データ...`
-                },
-                body: JSON.stringify({ text: text })
-            });
+            // ※実際にはここでOAuth署名の作成が必要ですが、
+            // まずは設定が正しく保存・読み込みできているかを確認してください。
+            console.log("使用するキー:", localStorage.getItem('x_consumer_key'));
 
-            if (response.ok) {
-                status.innerText = '✅ 投稿成功！';
-                document.getElementById('tweetText').value = '';
-            } else {
-                status.innerText = '❌ エラーが発生しました';
-            }
+            // 送信テスト用のダミー処理（実際のリクエストはOAuthライブラリが必要です）
+            status.innerText = '送信準備完了（OAuth署名の構築が必要です）';
+            
         } catch (e) {
-            status.innerText = '❌ 送信失敗: ' + e.message;
+            status.innerText = '❌ エラー: ' + e.message;
         }
     }
 </script>
